@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<bean class="com.atguigu.shiro.MyService"/>
+
+	<bean id="cacheManager" class="org.apache.shiro.cache.ehcache.EhCacheManager">
+		<property name="cacheManagerConfigFile" value="classpath:ehcache.xml"/>
+	</bean>
+	
+	<bean id="myRealm" class="com.atguigu.shiro.MyRealm">
+		<property name="credentialsMatcher">
+			<bean class="org.apache.shiro.authc.credential.HashedCredentialsMatcher">
+				<property name="hashAlgorithmName" value="MD5"/>
+				<property name="hashIterations" value="1024"/>
+			</bean>
+		</property>
+	</bean>
+	
+	<!-- 配置shiro 的SecurityManager.shiro最核心的组件 -->
+	<bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+		<property name="cacheManager" ref="cacheManager"/>
+		<property name="realm" ref="myRealm"/>
+	</bean>
+	
+	<!-- 可以自动掉配ioc容器中shiro bean的init和destroy方法 -->
+	<bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor"/>
+	
+	<!-- 可以再spring中使用shiro的权限注解，但必须在配置了lifecycleBeanPostProcessor 之后才能使用 -->
+	<bean class="org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator" depends-on="lifecycleBeanPostProcessor"/>
+	
+	<bean class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor">
+		<property name="securityManager" ref="securityManager"/>
+	</bean>
+	
+	<!-- 配置shiro filter -->
+	<bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+		<property name="securityManager" ref="securityManager"/>
+		<property name="loginUrl" value="/login.jsp"/>
+		<property name="unauthorizedUrl" value="unauthorized.jsp"/>
+		<property name="filterChainDefinitions">
+			
+			<value>
+				/login.jsp = anon
+				/shiro-login = anon
+				/shiro-logout = logout
+				
+				/admin.jsp = roles[admin]
+				/user.jsp = roles[user]
+				
+				/** = authc
+			</value>
+		
+		</property>
+	
+	</bean>
+</beans>
